@@ -413,6 +413,70 @@
         .confirm-box p { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); }
         .confirm-btns { display: flex; gap: 10px; justify-content: center; }
 
+        /* ═══════════════════════════════════════════
+           ফটো আপলোড
+        ═══════════════════════════════════════════ */
+        .photo-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .25s;
+            background: var(--surface-dim);
+            position: relative;
+        }
+        .photo-upload-area:hover, .photo-upload-area:active {
+            border-color: var(--primary-soft);
+            background: #eef3fb;
+        }
+        .photo-upload-area.has-photo {
+            border-style: solid;
+            border-color: var(--accent);
+            background: #fefce8;
+        }
+        .photo-upload-icon {
+            font-size: 28px; color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .photo-upload-text {
+            font-size: 12px; color: var(--text-muted); font-weight: 500;
+        }
+        .photo-upload-text b { color: var(--primary-soft); }
+        .photo-preview-wrap {
+            position: relative;
+            display: inline-block;
+        }
+        .photo-preview {
+            width: 100px; height: 125px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 3px solid var(--accent);
+            box-shadow: 0 4px 16px rgba(212,175,55,0.2);
+        }
+        .photo-remove {
+            position: absolute; top: -6px; right: -6px;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--danger); color: #fff;
+            border: 2px solid #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+        }
+        .photo-source-btns {
+            display: flex; gap: 8px; justify-content: center;
+            margin-top: 10px;
+        }
+        .photo-src-btn {
+            padding: 6px 14px; border-radius: 10px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 11px; font-weight: 600;
+            color: var(--text-secondary); cursor: pointer;
+            display: flex; align-items: center; gap: 5px;
+            transition: all .15s;
+        }
+        .photo-src-btn:active { background: var(--surface-dim); transform: scale(.96); }
+        .photo-src-btn i { font-size: 12px; }
+
         @media (min-width: 600px) {
             .stat-grid { grid-template-columns: repeat(4, 1fr); }
             .form-row { grid-template-columns: 1fr 1fr 1fr; }
@@ -572,6 +636,29 @@
                     <div class="form-group">
                         <label class="form-label">ঠিকানা</label>
                         <input type="text" class="form-input" id="f-address" placeholder="বর্তমান ঠিকানা">
+                    </div>
+
+                    <!-- ফটো আপলোড -->
+                    <div class="form-group">
+                        <label class="form-label">ছবি</label>
+                        <div class="photo-upload-area" id="photoUploadArea" onclick="triggerPhotoInput('file')">
+                            <div id="photoPlaceholder">
+                                <div class="photo-upload-icon"><i class="fas fa-camera"></i></div>
+                                <div class="photo-upload-text"><b>ক্লিক করুন</b> অথবা ছবি টেনে আনুন</div>
+                                <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">JPG, PNG · সর্বোচ্চ ৫০০KB</div>
+                                <div class="photo-source-btns">
+                                    <div class="photo-src-btn" onclick="event.stopPropagation(); triggerPhotoInput('file');"><i class="fas fa-folder-open"></i> গ্যালারি</div>
+                                    <div class="photo-src-btn" onclick="event.stopPropagation(); triggerPhotoInput('camera');"><i class="fas fa-camera"></i> ক্যামেরা</div>
+                                </div>
+                            </div>
+                            <div id="photoPreviewWrap" class="photo-preview-wrap" style="display:none;">
+                                <img id="photoPreview" class="photo-preview" alt="ছবি">
+                                <div class="photo-remove" onclick="event.stopPropagation(); removePhoto();"><i class="fas fa-times"></i></div>
+                            </div>
+                        </div>
+                        <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhotoSelect(event)">
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(event)">
+                        <input type="hidden" id="f-photo" value="">
                     </div>
 
                     <div style="display:flex; gap:10px; margin-top:6px;">
@@ -809,8 +896,98 @@
         document.getElementById('f-participants').value = '1';
         document.getElementById('f-amount').value = '500';
         document.getElementById('f-status').value = 'Unpaid';
+        document.getElementById('f-photo').value = '';
         document.getElementById('regSubmitBtn').innerHTML = '<i class="fas fa-check"></i> নিবন্ধন করুন';
+        removePhoto();
     }
+
+    // ================================================================
+    //  ফটো আপলোড হ্যান্ডলিং
+    // ================================================================
+    function triggerPhotoInput(source) {
+        if (source === 'camera') {
+            document.getElementById('cameraInput').click();
+        } else {
+            document.getElementById('photoInput').click();
+        }
+    }
+
+    function handlePhotoSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // ফাইল সাইজ চেক (৫০০KB)
+        if (file.size > 512000) {
+            showToast('ছবির সাইজ ৫০০KB এর কম হতে হবে', 'error');
+            e.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            // Compress করি
+            compressPhoto(ev.target.result, function(compressed) {
+                document.getElementById('f-photo').value = compressed;
+                document.getElementById('photoPreview').src = compressed;
+                document.getElementById('photoPlaceholder').style.display = 'none';
+                document.getElementById('photoPreviewWrap').style.display = 'inline-block';
+                document.getElementById('photoUploadArea').classList.add('has-photo');
+            });
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    }
+
+    function compressPhoto(dataUrl, callback) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const maxW = 300, maxH = 375;
+            let w = img.width, h = img.height;
+            if (w > maxW) { h = h * maxW / w; w = maxW; }
+            if (h > maxH) { w = w * maxH / h; h = maxH; }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            callback(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.src = dataUrl;
+    }
+
+    function removePhoto() {
+        document.getElementById('f-photo').value = '';
+        document.getElementById('photoPreview').src = '';
+        document.getElementById('photoPlaceholder').style.display = '';
+        document.getElementById('photoPreviewWrap').style.display = 'none';
+        document.getElementById('photoUploadArea').classList.remove('has-photo');
+    }
+
+    // Drag & Drop সাপোর্ট
+    document.addEventListener('DOMContentLoaded', () => {
+        const area = document.getElementById('photoUploadArea');
+        if (area) {
+            area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('has-photo'); });
+            area.addEventListener('dragleave', () => { if (!document.getElementById('f-photo').value) area.classList.remove('has-photo'); });
+            area.addEventListener('drop', e => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    if (file.size > 512000) { showToast('ছবির সাইজ ৫০০KB এর কম হতে হবে', 'error'); return; }
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        compressPhoto(ev.target.result, compressed => {
+                            document.getElementById('f-photo').value = compressed;
+                            document.getElementById('photoPreview').src = compressed;
+                            document.getElementById('photoPlaceholder').style.display = 'none';
+                            document.getElementById('photoPreviewWrap').style.display = 'inline-block';
+                            document.getElementById('photoUploadArea').classList.add('has-photo');
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
 
     async function submitRegistration(e) {
         e.preventDefault();
@@ -825,6 +1002,7 @@
         const paymentStatus = document.getElementById('f-status').value;
         const amount = parseInt(document.getElementById('f-amount').value) || 0;
         const address = document.getElementById('f-address').value.trim();
+        const photo = document.getElementById('f-photo').value || '';
         const editKey = document.getElementById('f-editKey').value;
 
         if (!name || !mobile || !batchType || !batchYear) {
@@ -839,10 +1017,12 @@
         try {
             if (editKey) {
                 // আপডেট
-                await db.ref('registrations/' + editKey).update({
+                const updateData = {
                     name, mobile, batchType, batchYear, participants,
                     tshirtSize, paymentMethod, paymentStatus, amount, address
-                });
+                };
+                if (photo) updateData.photo = photo;
+                await db.ref('registrations/' + editKey).update(updateData);
                 showToast('নিবন্ধন আপডেট হয়েছে!', 'success');
             } else {
                 // নতুন — রেজি নম্বর তৈরি
@@ -854,7 +1034,7 @@
                 await db.ref('registrations/' + regNo).set({
                     regNo, name, mobile, batchType, batchYear, participants,
                     tshirtSize, paymentMethod, paymentStatus, amount, address,
-                    photo: '',
+                    photo: photo || '',
                     timestamp: Date.now()
                 });
                 showToast(`${regNo} - নিবন্ধন সম্পন্ন!`, 'success');
@@ -891,7 +1071,10 @@
             const paid = r.paymentStatus === 'Paid';
             return `
             <div class="reg-row" onclick="showDetail('${r.regNo || ''}')">
-                <div class="reg-avatar">${initial}</div>
+                ${r.photo
+                    ? `<img src="${r.photo}" style="width:40px; height:40px; border-radius:10px; object-fit:cover; flex-shrink:0; border:2px solid var(--accent);">`
+                    : `<div class="reg-avatar">${initial}</div>`
+                }
                 <div class="reg-info">
                     <div class="reg-name">${r.name || '---'}</div>
                     <div class="reg-sub">${r.regNo || '---'} · ${r.batchType || ''} ${r.batchYear || ''} · ${r.mobile || ''}</div>
@@ -931,7 +1114,10 @@
         document.getElementById('detailContent').innerHTML = `
             <div style="display:grid; gap:10px;">
                 <div style="display:flex; align-items:center; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--border);">
-                    <div class="reg-avatar" style="width:52px; height:52px; font-size:20px;">${(r.name || '?').charAt(0)}</div>
+                    ${r.photo
+                        ? `<img src="${r.photo}" style="width:52px; height:65px; border-radius:12px; object-fit:cover; border:2px solid var(--accent);">`
+                        : `<div class="reg-avatar" style="width:52px; height:52px; font-size:20px;">${(r.name || '?').charAt(0)}</div>`
+                    }
                     <div>
                         <div style="font-size:16px; font-weight:800;">${r.name || '---'}</div>
                         <div style="font-size:12px; color:var(--text-muted);">${r.regNo || '---'}</div>
@@ -977,6 +1163,17 @@
         document.getElementById('f-amount').value = r.amount || 500;
         document.getElementById('f-address').value = r.address || '';
         document.getElementById('f-editKey').value = regNo;
+
+        // ফটো প্রিভিউ
+        if (r.photo) {
+            document.getElementById('f-photo').value = r.photo;
+            document.getElementById('photoPreview').src = r.photo;
+            document.getElementById('photoPlaceholder').style.display = 'none';
+            document.getElementById('photoPreviewWrap').style.display = 'inline-block';
+            document.getElementById('photoUploadArea').classList.add('has-photo');
+        } else {
+            removePhoto();
+        }
 
         document.getElementById('regSubmitBtn').innerHTML = '<i class="fas fa-save"></i> আপডেট করুন';
         switchPage('register');
