@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>অ্যাডমিন প্যানেল - রজত জয়ন্তী ২০২৭</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&display=swap');
+
+        :root {
+            --primary: #0b1d3a;
+            --primary-light: #122d5e;
+            --primary-mid: #1a3f7a;
+            --primary-soft: #2a5aa0;
+            --primary-pale: #3b7dd8;
+            --accent: #d4af37;
+            --accent-light: #e8ca5a;
+            --accent-dark: #b08d30;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --surface: #ffffff;
+            --surface-dim: #f4f7fc;
+            --surface-muted: #e8edf5;
+            --text-primary: #0b1d3a;
+            --text-secondary: #4a6285;
+            --text-muted: #8fa4c0;
+            --border: #dfe6f0;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Noto Sans Bengali', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--surface-dim);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary-soft); border-radius: 4px; }
+
+        /* ═══════════════════════════════════════════
+           সাইডবার / ড্রয়ার
+        ═══════════════════════════════════════════ */
+        .sidebar-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(11,29,58,0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+        }
+        .sidebar-overlay.show { display: block; }
+
+        .sidebar {
+            position: fixed; top: 0; left: 0; bottom: 0;
+            width: 270px; z-index: 210;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+            transform: translateX(-100%);
+            transition: transform .3s cubic-bezier(.4,0,.2,1);
+            overflow-y: auto;
+            border-radius: 0 20px 20px 0;
+        }
+        .sidebar.open { transform: translateX(0); }
+
+        .sidebar-header {
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-logo {
+            width: 48px; height: 48px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 12px;
+        }
+        .sidebar-logo i { font-size: 22px; color: var(--primary); }
+        .sidebar-header h2 { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.3; }
+        .sidebar-header p { font-size: 9px; letter-spacing: .25em; color: var(--accent-light); font-weight: 600; margin-top: 2px; }
+
+        .sidebar-nav { padding: 12px 10px; }
+        .sidebar-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; border-radius: 12px;
+            color: rgba(255,255,255,0.6); cursor: pointer;
+            transition: all .2s; font-size: 13px; font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .sidebar-item:active, .sidebar-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .sidebar-item.active { background: rgba(212,175,55,0.15); color: var(--accent-light); }
+        .sidebar-item i { width: 20px; text-align: center; font-size: 15px; }
+        .sidebar-divider {
+            height: 1px; background: rgba(255,255,255,0.06);
+            margin: 8px 14px;
+        }
+
+        /* ═══════════════════════════════════════════
+           টপ বার
+        ═══════════════════════════════════════════ */
+        .topbar {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--surface);
+            box-shadow: 0 2px 12px rgba(11,29,58,0.06);
+            padding: 12px 16px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .menu-btn {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--surface-dim);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-primary);
+            border: none; font-size: 16px;
+        }
+        .menu-btn:active { background: var(--surface-muted); }
+        .topbar-title { flex: 1; }
+        .topbar-title h1 { font-size: 16px; font-weight: 800; }
+        .topbar-title p { font-size: 10px; color: var(--text-muted); }
+
+        /* ═══════════════════════════════════════════
+           কন্টেন্ট
+        ═══════════════════════════════════════════ */
+        .main-content {
+            padding: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ═══════════════════════════════════════════
+           কার্ড
+        ═══════════════════════════════════════════ */
+        .card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 2px 12px rgba(11,29,58,0.05);
+            border: 1px solid rgba(11,29,58,0.04);
+            margin-bottom: 14px;
+        }
+        .card-title {
+            font-size: 14px; font-weight: 800; color: var(--text-primary);
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 14px;
+        }
+        .card-title i { color: var(--accent); font-size: 13px; }
+
+        /* ═══════════════════════════════════════════
+           স্ট্যাট কার্ড
+        ═══════════════════════════════════════════ */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(11,29,58,0.05);
+            border: 1px solid rgba(11,29,58,0.04);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::after {
+            content: ''; position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+        }
+        .stat-card.s1::after { background: linear-gradient(90deg, var(--primary), var(--primary-soft)); }
+        .stat-card.s2::after { background: linear-gradient(90deg, var(--accent-dark), var(--accent-light)); }
+        .stat-card.s3::after { background: linear-gradient(90deg, #059669, #34d399); }
+        .stat-card.s4::after { background: linear-gradient(90deg, var(--danger), #f87171); }
+        .stat-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; margin-bottom: 8px;
+        }
+        .stat-val { font-size: 22px; font-weight: 900; line-height: 1; }
+        .stat-lbl { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-weight: 500; }
+
+        /* ═══════════════════════════════════════════
+           ফর্ম এলিমেন্ট
+        ═══════════════════════════════════════════ */
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-label {
+            display: block; font-size: 12px; font-weight: 700;
+            color: var(--text-secondary); margin-bottom: 5px;
+        }
+        .form-input {
+            width: 100%; padding: 11px 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px; outline: none;
+            font-size: 13px; background: var(--surface);
+            transition: border-color .2s, box-shadow .2s;
+            color: var(--text-primary);
+        }
+        .form-input:focus {
+            border-color: var(--primary-soft);
+            box-shadow: 0 0 0 3px rgba(42,90,160,0.1);
+        }
+        .form-input::placeholder { color: var(--text-muted); }
+        select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%238fa4c0' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+        textarea.form-input { resize: vertical; min-height: 80px; }
+
+        .form-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+
+        /* বাটন */
+        .btn {
+            padding: 10px 20px; border-radius: 12px;
+            font-size: 13px; font-weight: 700;
+            border: none; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 6px;
+            transition: transform .15s, box-shadow .15s;
+        }
+        .btn:active { transform: scale(.96); }
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(11,29,58,0.2); }
+        .btn-accent { background: var(--accent); color: var(--primary); box-shadow: 0 4px 12px rgba(212,175,55,0.25); }
+        .btn-success { background: var(--success); color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+        .btn-danger { background: var(--danger); color: #fff; box-shadow: 0 4px 12px rgba(239,68,68,0.2); }
+        .btn-ghost { background: var(--surface-dim); color: var(--text-secondary); }
+        .btn-sm { padding: 7px 14px; font-size: 11px; border-radius: 10px; }
+
+        /* ═══════════════════════════════════════════
+           টেবিল / লিস্ট
+        ═══════════════════════════════════════════ */
+        .list-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px; gap: 8px; flex-wrap: wrap;
+        }
+        .list-search {
+            flex: 1; min-width: 180px;
+            padding: 9px 14px 9px 36px;
+            border: 2px solid var(--border);
+            border-radius: 10px; outline: none;
+            font-size: 12px; background: var(--surface);
+            transition: border-color .2s;
+            position: relative;
+        }
+        .list-search:focus { border-color: var(--primary-soft); }
+        .search-wrap { position: relative; flex: 1; min-width: 180px; }
+        .search-wrap i {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); font-size: 12px;
+        }
+
+        .reg-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px; border-radius: 12px;
+            background: var(--surface-dim);
+            margin-bottom: 6px;
+            transition: background .15s;
+            cursor: pointer;
+        }
+        .reg-row:active { background: var(--surface-muted); }
+        .reg-avatar {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 15px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--accent-light), var(--accent));
+            color: var(--primary);
+        }
+        .reg-info { flex: 1; min-width: 0; }
+        .reg-name { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .reg-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+        .reg-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .reg-actions button {
+            width: 30px; height: 30px; border-radius: 8px;
+            border: none; cursor: pointer; font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform .15s;
+        }
+        .reg-actions button:active { transform: scale(.9); }
+        .act-edit { background: #dbeafe; color: var(--primary-soft); }
+        .act-delete { background: #fee2e2; color: var(--danger); }
+        .act-paid { background: #d1fae5; color: #059669; }
+
+        .badge-paid { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; }
+        .badge-unpaid { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; }
+
+        /* ═══════════════════════════════════════════
+           নোটিশ কার্ড
+        ═══════════════════════════════════════════ */
+        .notice-row {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 14px; border-radius: 12px;
+            background: var(--surface-dim);
+            margin-bottom: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+        .notice-row::before {
+            content: ''; position: absolute;
+            left: 0; top: 0; bottom: 0; width: 3px;
+        }
+        .notice-row.urgent::before { background: var(--danger); }
+        .notice-row.important::before { background: var(--accent); }
+        .notice-row.general::before { background: var(--primary-soft); }
+        .notice-row-info { flex: 1; min-width: 0; }
+        .notice-row-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+        .notice-row-body { font-size: 11px; color: var(--text-secondary); line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .notice-row-meta { font-size: 9px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 10px; }
+        .notice-tag { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+        .notice-tag.urgent { background: #fee2e2; color: #991b1b; }
+        .notice-tag.important { background: #fef3c7; color: #92400e; }
+        .notice-tag.general { background: #dbeafe; color: #1e40af; }
+
+        /* ═══════════════════════════════════════════
+           মোডাল
+        ═══════════════════════════════════════════ */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 300;
+            background: rgba(11,29,58,0.45);
+            backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: var(--surface);
+            border-radius: 20px;
+            width: 100%; max-width: 500px;
+            max-height: 90vh; overflow-y: auto;
+            padding: 24px 20px;
+            animation: modalIn .3s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes modalIn { from { opacity:0; transform:scale(.95) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+        .modal-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .modal-head h3 { font-size: 16px; font-weight: 800; }
+        .modal-close {
+            width: 32px; height: 32px; border-radius: 10px;
+            background: var(--surface-dim);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-muted); border: none;
+        }
+
+        /* ═══════════════════════════════════════════
+           টোস্ট
+        ═══════════════════════════════════════════ */
+        .toast-wrap {
+            position: fixed; top: 14px; left: 14px; right: 14px;
+            z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+            pointer-events: none;
+        }
+        .toast-msg {
+            padding: 12px 16px; border-radius: 12px;
+            color: #fff; font-size: 12px; font-weight: 600;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+            display: flex; align-items: center; gap: 8px;
+            pointer-events: auto;
+            animation: tIn .4s cubic-bezier(.4,0,.2,1) forwards;
+        }
+        .toast-msg.out { animation: tOut .3s ease forwards; }
+        .toast-success { background: linear-gradient(135deg, #059669dd, #10b981dd); }
+        .toast-error   { background: linear-gradient(135deg, #dc2626dd, #ef4444dd); }
+        .toast-info    { background: linear-gradient(135deg, var(--primary-light)dd, var(--primary-soft)dd); }
+        @keyframes tIn  { from { transform: translateY(-18px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+        @keyframes tOut { to { transform: translateY(-18px); opacity:0; } }
+
+        /* ═══════════════════════════════════════════
+           স্পিনার
+        ═══════════════════════════════════════════ */
+        .spinner {
+            width: 28px; height: 28px;
+            border: 3px solid var(--surface-muted);
+            border-top-color: var(--primary-mid);
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ═══════════════════════════════════════════
+           পেজ
+        ═══════════════════════════════════════════ */
+        .page { display: none; }
+        .page.active {
+            display: block;
+            animation: pageIn .3s ease;
+        }
+        @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ═══════════════════════════════════════════
+           এম্পটি
+        ═══════════════════════════════════════════ */
+        .empty-state { text-align: center; padding: 32px 16px; }
+        .empty-state i { font-size: 32px; color: var(--text-muted); margin-bottom: 10px; }
+        .empty-state p { font-size: 13px; color: var(--text-muted); }
+
+        /* ═══════════════════════════════════════════
+           কনফার্ম ডায়ালগ
+        ═══════════════════════════════════════════ */
+        .confirm-box {
+            text-align: center; padding: 10px 0;
+        }
+        .confirm-box p { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); }
+        .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+
+        @media (min-width: 600px) {
+            .stat-grid { grid-template-columns: repeat(4, 1fr); }
+            .form-row { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- সাইডবার ওভারলে -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- সাইডবার -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i></div>
+            <h2>KCG United High School</h2>
+            <p>ADMIN PANEL</p>
+        </div>
+        <div class="sidebar-nav">
+            <div class="sidebar-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                <i class="fas fa-chart-pie"></i> ড্যাশবোর্ড
+            </div>
+            <div class="sidebar-item" data-page="register" onclick="switchPage('register')">
+                <i class="fas fa-user-plus"></i> নতুন নিবন্ধন
+            </div>
+            <div class="sidebar-item" data-page="registrations" onclick="switchPage('registrations')">
+                <i class="fas fa-users"></i> সকল নিবন্ধন
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-item" data-page="notices" onclick="switchPage('notices')">
+                <i class="fas fa-bullhorn"></i> নোটিশ বোর্ড
+            </div>
+        </div>
+    </div>
+
+    <!-- টপ বার -->
+    <div class="topbar">
+        <button class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <div class="topbar-title">
+            <h1 id="pageTitle">ড্যাশবোর্ড</h1>
+            <p>রজত জয়ন্তী ২০২৭ - অ্যাডমিন</p>
+        </div>
+    </div>
+
+    <!-- মূল কন্টেন্ট -->
+    <div class="main-content">
+
+        <!-- ════ ড্যাশবোর্ড ════ -->
+        <div id="page-dashboard" class="page active">
+            <div class="stat-grid">
+                <div class="stat-card s1">
+                    <div class="stat-icon" style="background:#dbeafe; color:var(--primary-soft);"><i class="fas fa-users"></i></div>
+                    <div class="stat-val" id="d-total">০</div>
+                    <div class="stat-lbl">মোট নিবন্ধন</div>
+                </div>
+                <div class="stat-card s2">
+                    <div class="stat-icon" style="background:#fef3c7; color:var(--accent-dark);"><i class="fas fa-user-check"></i></div>
+                    <div class="stat-val" style="color:var(--accent-dark);" id="d-paid">০</div>
+                    <div class="stat-lbl">পরিশোধিত</div>
+                </div>
+                <div class="stat-card s3">
+                    <div class="stat-icon" style="background:#d1fae5; color:#059669;"><i class="fas fa-bangladeshi-taka-sign"></i></div>
+                    <div class="stat-val" style="color:#059669;" id="d-amount">৳০</div>
+                    <div class="stat-lbl">মোট সংগ্রহ</div>
+                </div>
+                <div class="stat-card s4">
+                    <div class="stat-icon" style="background:#fee2e2; color:var(--danger);"><i class="fas fa-user-times"></i></div>
+                    <div class="stat-val" style="color:var(--danger);" id="d-unpaid">০</div>
+                    <div class="stat-lbl">অপরিশোধিত</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fas fa-layer-group"></i> ব্যাচভিত্তিক হিসাব</div>
+                <div id="dashBatchList"><div style="padding:16px 0;"><div class="spinner"></div></div></div>
+            </div>
+        </div>
+
+        <!-- ════ নতুন নিবন্ধন ════ -->
+        <div id="page-register" class="page">
+            <div class="card">
+                <div class="card-title"><i class="fas fa-user-plus"></i> নতুন নিবন্ধন</div>
+                <form id="regForm" onsubmit="submitRegistration(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">পুরো নাম *</label>
+                            <input type="text" class="form-input" id="f-name" placeholder="প্রাক্তন ছাত্র/ছাত্রীর নাম" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">মোবাইল নম্বর *</label>
+                            <input type="tel" class="form-input" id="f-mobile" placeholder="01XXXXXXXXX" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">ব্যাচ টাইপ *</label>
+                            <select class="form-input" id="f-batchType" required>
+                                <option value="">নির্বাচন করুন</option>
+                                <option value="এসএসসি">এসএসসি</option>
+                                <option value="এইচএসসি">এইচএসসি</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ব্যাচ সাল *</label>
+                            <input type="text" class="form-input" id="f-batchYear" placeholder="২০২০" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">অংশগ্রহণকারী সংখ্যা</label>
+                            <input type="number" class="form-input" id="f-participants" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">টি-শার্ট সাইজ</label>
+                            <select class="form-input" id="f-tshirt">
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                                <option value="XXL">XXL</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">পেমেন্ট মেথড</label>
+                            <select class="form-input" id="f-payment">
+                                <option value="বিকাশ">বিকাশ</option>
+                                <option value="নগদ">নগদ</option>
+                                <option value="ক্যাশ">ক্যাশ</option>
+                                <option value="ব্যাংক">ব্যাংক</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">পেমেন্ট স্ট্যাটাস</label>
+                            <select class="form-input" id="f-status">
+                                <option value="Unpaid">অপরিশোধিত</option>
+                                <option value="Paid">পরিশোধিত</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">পরিমাণ (টাকা)</label>
+                        <input type="number" class="form-input" id="f-amount" value="500">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">ঠিকানা</label>
+                        <input type="text" class="form-input" id="f-address" placeholder="বর্তমান ঠিকানা">
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:6px;">
+                        <button type="submit" class="btn btn-primary" id="regSubmitBtn"><i class="fas fa-check"></i> নিবন্ধন করুন</button>
+                        <button type="button" class="btn btn-ghost" onclick="resetRegForm()"><i class="fas fa-redo"></i> রিসেট</button>
+                    </div>
+                    <input type="hidden" id="f-editKey" value="">
+                </form>
+            </div>
+        </div>
+
+        <!-- ════ সকল নিবন্ধন ════ -->
+        <div id="page-registrations" class="page">
+            <div class="card">
+                <div class="list-header">
+                    <div class="card-title" style="margin-bottom:0;"><i class="fas fa-users"></i> সকল নিবন্ধন</div>
+                    <div class="search-wrap">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="list-search" id="regSearchInput" placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." oninput="filterRegistrations()">
+                    </div>
+                </div>
+                <div id="regListContainer">
+                    <div style="padding:16px 0;"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════ নোটিশ বোর্ড ════ -->
+        <div id="page-notices" class="page">
+            <div class="card">
+                <div class="card-title"><i class="fas fa-bullhorn"></i> নোটিশ প্রকাশ</div>
+                <form id="noticeForm" onsubmit="submitNotice(event)">
+                    <div class="form-group">
+                        <label class="form-label">শিরোনাম *</label>
+                        <input type="text" class="form-input" id="n-title" placeholder="নোটিশের শিরোনাম" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">বিস্তারিত</label>
+                        <textarea class="form-input" id="n-body" placeholder="নোটিশের বিস্তারিত লেখা..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">প্রায়োরিটি</label>
+                            <select class="form-input" id="n-priority">
+                                <option value="general">সাধারণ</option>
+                                <option value="important">গুরুত্বপূর্ণ</option>
+                                <option value="urgent">জরুরি</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">প্রকাশকারী</label>
+                            <input type="text" class="form-input" id="n-author" placeholder="অ্যাডমিন" value="অ্যাডমিন">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-accent"><i class="fas fa-paper-plane"></i> প্রকাশ করুন</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fas fa-list"></i> প্রকাশিত নোটিশ</div>
+                <div id="noticeListContainer">
+                    <div style="padding:16px 0;"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- টোস্ট -->
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- কনফার্ম মোডাল -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-box">
+            <div class="confirm-box">
+                <div style="font-size:36px; margin-bottom:12px; color:var(--danger);"><i class="fas fa-exclamation-triangle"></i></div>
+                <p id="confirmMsg">আপনি কি নিশ্চিত?</p>
+                <div class="confirm-btns">
+                    <button class="btn btn-danger" id="confirmYes" onclick="confirmAction()"><i class="fas fa-trash"></i> হ্যাঁ, মুছুন</button>
+                    <button class="btn btn-ghost" onclick="closeConfirm()"><i class="fas fa-times"></i> বাতিল</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- বিস্তারিত মোডাল -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h3><i class="fas fa-user" style="color:var(--accent); margin-right:6px;"></i> নিবন্ধন বিস্তারিত</h3>
+                <button class="modal-close" onclick="closeDetail()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <script>
+    // ================================================================
+    //  Firebase কনফিগারেশন
+    // ================================================================
+    const firebaseConfig = {
+        databaseURL: "https://dokan-a264b-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ================================================================
+    //  গ্লোবাল ভেরিয়েবল
+    // ================================================================
+    let allRegs = [];
+    let pendingConfirmAction = null;
+
+    // ================================================================
+    //  সাইডবার
+    // ================================================================
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('show');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    // ================================================================
+    //  পেজ নেভিগেশন
+    // ================================================================
+    const pageTitles = {
+        dashboard: 'ড্যাশবোর্ড',
+        register: 'নতুন নিবন্ধন',
+        registrations: 'সকল নিবন্ধন',
+        notices: 'নোটিশ বোর্ড'
+    };
+
+    function switchPage(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + page)?.classList.add('active');
+        document.querySelectorAll('.sidebar-item').forEach(s =>
+            s.classList.toggle('active', s.dataset.page === page)
+        );
+        document.getElementById('pageTitle').textContent = pageTitles[page] || '';
+        closeSidebar();
+
+        if (page === 'dashboard') loadDashboard();
+        if (page === 'registrations') loadRegistrations();
+        if (page === 'notices') loadNotices();
+    }
+
+    // ================================================================
+    //  Firebase থেকে সব ডাটা পড়া
+    // ================================================================
+    async function fetchAll() {
+        try {
+            const snap = await db.ref('registrations').once('value');
+            if (!snap.exists()) return [];
+            const data = snap.val();
+            // registrations হতে পারে {regNo: {...}} বা {pushId: {...}}
+            return Object.values(data);
+        } catch (e) {
+            console.error(e);
+            showToast('ডাটা লোড সমস্যা', 'error');
+            return [];
+        }
+    }
+
+    // ================================================================
+    //  কাউন্টার অ্যানিমেশন
+    // ================================================================
+    function counterAnim(el, target, prefix = '') {
+        if (!el) return;
+        const dur = 500, start = parseInt(el.textContent.replace(/[^\d]/g, '')) || 0, t0 = performance.now();
+        (function step(now) {
+            const p = Math.min((now - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+            el.textContent = prefix + Math.round(start + (target - start) * e).toLocaleString('bn-BD');
+            if (p < 1) requestAnimationFrame(step);
+        })(t0);
+    }
+
+    // ================================================================
+    //  ড্যাশবোর্ড
+    // ================================================================
+    async function loadDashboard() {
+        const regs = await fetchAll();
+        allRegs = regs;
+
+        const paid = regs.filter(r => r.paymentStatus === 'Paid');
+        const unpaid = regs.filter(r => r.paymentStatus !== 'Paid');
+        const totalAmt = paid.reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
+
+        counterAnim(document.getElementById('d-total'), regs.length);
+        counterAnim(document.getElementById('d-paid'), paid.length);
+        counterAnim(document.getElementById('d-amount'), totalAmt, '৳');
+        counterAnim(document.getElementById('d-unpaid'), unpaid.length);
+
+        // ব্যাচ হিসাব
+        const batchMap = {};
+        regs.forEach(r => {
+            const k = (r.batchType || '') + ' ' + (r.batchYear || '');
+            if (!batchMap[k]) batchMap[k] = { m: 0, p: 0, a: 0 };
+            batchMap[k].m++;
+            batchMap[k].p += (parseInt(r.participants) || 1);
+            if (r.paymentStatus === 'Paid') batchMap[k].a += (parseInt(r.amount) || 0);
+        });
+
+        const el = document.getElementById('dashBatchList');
+        const keys = Object.keys(batchMap).sort();
+        if (!keys.length) {
+            el.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>কোনো নিবন্ধন নেই</p></div>';
+            return;
+        }
+        const maxM = Math.max(...keys.map(k => batchMap[k].m));
+        const colors = ['var(--primary)', 'var(--accent-dark)', '#059669', '#7c3aed', '#db2777'];
+
+        el.innerHTML = keys.map((k, i) => {
+            const b = batchMap[k];
+            const w = Math.max(14, (b.m / maxM) * 100);
+            return `
+            <div style="background:var(--surface-dim); border-radius:10px; padding:10px 12px; margin-bottom:6px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                    <span style="font-weight:700;">${k}</span>
+                    <span style="color:var(--text-muted);">${b.m} সদস্য · ${b.p} অংশগ্রহণ · ৳${b.a}</span>
+                </div>
+                <div style="height:6px; background:var(--surface-muted); border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:${w}%; background:${colors[i % 5]}; border-radius:3px; transition:width .6s;"></div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ================================================================
+    //  নিবন্ধন ফর্ম
+    // ================================================================
+    function resetRegForm() {
+        document.getElementById('regForm').reset();
+        document.getElementById('f-editKey').value = '';
+        document.getElementById('f-participants').value = '1';
+        document.getElementById('f-amount').value = '500';
+        document.getElementById('f-status').value = 'Unpaid';
+        document.getElementById('regSubmitBtn').innerHTML = '<i class="fas fa-check"></i> নিবন্ধন করুন';
+    }
+
+    async function submitRegistration(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('f-name').value.trim();
+        const mobile = document.getElementById('f-mobile').value.trim();
+        const batchType = document.getElementById('f-batchType').value;
+        const batchYear = document.getElementById('f-batchYear').value.trim();
+        const participants = parseInt(document.getElementById('f-participants').value) || 1;
+        const tshirtSize = document.getElementById('f-tshirt').value;
+        const paymentMethod = document.getElementById('f-payment').value;
+        const paymentStatus = document.getElementById('f-status').value;
+        const amount = parseInt(document.getElementById('f-amount').value) || 0;
+        const address = document.getElementById('f-address').value.trim();
+        const editKey = document.getElementById('f-editKey').value;
+
+        if (!name || !mobile || !batchType || !batchYear) {
+            showToast('সকল আবশ্যক ফিল্ড পূরণ করুন', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('regSubmitBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> প্রসেসিং...';
+        btn.disabled = true;
+
+        try {
+            if (editKey) {
+                // আপডেট
+                await db.ref('registrations/' + editKey).update({
+                    name, mobile, batchType, batchYear, participants,
+                    tshirtSize, paymentMethod, paymentStatus, amount, address
+                });
+                showToast('নিবন্ধন আপডেট হয়েছে!', 'success');
+            } else {
+                // নতুন — রেজি নম্বর তৈরি
+                const snap = await db.ref('registrations').once('value');
+                let count = 0;
+                if (snap.exists()) count = Object.keys(snap.val()).length;
+                const regNo = 'RJ2027-' + String(count + 1).padStart(4, '0');
+
+                await db.ref('registrations/' + regNo).set({
+                    regNo, name, mobile, batchType, batchYear, participants,
+                    tshirtSize, paymentMethod, paymentStatus, amount, address,
+                    photo: '',
+                    timestamp: Date.now()
+                });
+                showToast(`${regNo} - নিবন্ধন সম্পন্ন!`, 'success');
+            }
+
+            resetRegForm();
+        } catch (e) {
+            console.error(e);
+            showToast('নিবন্ধনে সমস্যা হয়েছে', 'error');
+        }
+
+        btn.innerHTML = '<i class="fas fa-check"></i> নিবন্ধন করুন';
+        btn.disabled = false;
+    }
+
+    // ================================================================
+    //  সকল নিবন্ধন
+    // ================================================================
+    async function loadRegistrations() {
+        const regs = await fetchAll();
+        allRegs = regs;
+        renderRegList(regs);
+    }
+
+    function renderRegList(regs) {
+        const el = document.getElementById('regListContainer');
+        if (!regs.length) {
+            el.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>কোনো নিবন্ধন নেই</p></div>';
+            return;
+        }
+
+        el.innerHTML = regs.map(r => {
+            const initial = (r.name || '?').charAt(0);
+            const paid = r.paymentStatus === 'Paid';
+            return `
+            <div class="reg-row" onclick="showDetail('${r.regNo || ''}')">
+                <div class="reg-avatar">${initial}</div>
+                <div class="reg-info">
+                    <div class="reg-name">${r.name || '---'}</div>
+                    <div class="reg-sub">${r.regNo || '---'} · ${r.batchType || ''} ${r.batchYear || ''} · ${r.mobile || ''}</div>
+                </div>
+                <div style="margin-right:6px;">
+                    ${paid
+                        ? '<span class="badge-paid">পরিশোধিত</span>'
+                        : '<span class="badge-unpaid">অপরিশোধিত</span>'
+                    }
+                </div>
+                <div class="reg-actions" onclick="event.stopPropagation();">
+                    <button class="act-edit" title="এডিট" onclick="editReg('${r.regNo || ''}')"><i class="fas fa-pen"></i></button>
+                    <button class="act-paid" title="পেমেন্ট টগল" onclick="togglePaid('${r.regNo || ''}', '${r.paymentStatus || 'Unpaid'}')"><i class="fas fa-check"></i></button>
+                    <button class="act-delete" title="মুছুন" onclick="deleteReg('${r.regNo || ''}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function filterRegistrations() {
+        const q = document.getElementById('regSearchInput').value.toLowerCase().trim();
+        if (!q) { renderRegList(allRegs); return; }
+        const filtered = allRegs.filter(r =>
+            (r.name || '').toLowerCase().includes(q) ||
+            (r.regNo || '').toLowerCase().includes(q) ||
+            (r.mobile || '').includes(q)
+        );
+        renderRegList(filtered);
+    }
+
+    // বিস্তারিত দেখুন
+    function showDetail(regNo) {
+        const r = allRegs.find(x => x.regNo === regNo);
+        if (!r) return;
+
+        const paid = r.paymentStatus === 'Paid';
+        document.getElementById('detailContent').innerHTML = `
+            <div style="display:grid; gap:10px;">
+                <div style="display:flex; align-items:center; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+                    <div class="reg-avatar" style="width:52px; height:52px; font-size:20px;">${(r.name || '?').charAt(0)}</div>
+                    <div>
+                        <div style="font-size:16px; font-weight:800;">${r.name || '---'}</div>
+                        <div style="font-size:12px; color:var(--text-muted);">${r.regNo || '---'}</div>
+                    </div>
+                    <div style="margin-left:auto;">
+                        ${paid ? '<span class="badge-paid" style="font-size:10px; padding:3px 10px;">পরিশোধিত</span>' : '<span class="badge-unpaid" style="font-size:10px; padding:3px 10px;">অপরিশোধিত</span>'}
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div><span style="font-size:10px; color:var(--text-muted);">মোবাইল</span><div style="font-size:13px; font-weight:700;">${r.mobile || '---'}</div></div>
+                    <div><span style="font-size:10px; color:var(--text-muted);">ব্যাচ</span><div style="font-size:13px; font-weight:700;">${r.batchType || ''} ${r.batchYear || ''}</div></div>
+                    <div><span style="font-size:10px; color:var(--text-muted);">সদস্য সংখ্যা</span><div style="font-size:13px; font-weight:700;">${r.participants || 1} জন</div></div>
+                    <div><span style="font-size:10px; color:var(--text-muted);">টি-শার্ট</span><div style="font-size:13px; font-weight:700;">${r.tshirtSize || '---'}</div></div>
+                    <div><span style="font-size:10px; color:var(--text-muted);">পেমেন্ট মেথড</span><div style="font-size:13px; font-weight:700;">${r.paymentMethod || '---'}</div></div>
+                    <div><span style="font-size:10px; color:var(--text-muted);">পরিমাণ</span><div style="font-size:13px; font-weight:900; color:var(--accent-dark);">৳${r.amount || 0}</div></div>
+                </div>
+                ${r.address ? `<div><span style="font-size:10px; color:var(--text-muted);">ঠিকানা</span><div style="font-size:13px; font-weight:600;">${r.address}</div></div>` : ''}
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="btn btn-sm btn-primary" onclick="closeDetail(); editReg('${r.regNo}');"><i class="fas fa-pen"></i> এডিট</button>
+                    <button class="btn btn-sm ${paid ? 'btn-ghost' : 'btn-success'}" onclick="closeDetail(); togglePaid('${r.regNo}', '${r.paymentStatus || 'Unpaid'}');">
+                        <i class="fas fa-check"></i> ${paid ? 'অপরিশোধিত করুন' : 'পরিশোধিত করুন'}
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="closeDetail(); deleteReg('${r.regNo}');"><i class="fas fa-trash"></i> মুছুন</button>
+                </div>
+            </div>`;
+        document.getElementById('detailModal').classList.add('show');
+    }
+    function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
+
+    // এডিট
+    function editReg(regNo) {
+        const r = allRegs.find(x => x.regNo === regNo);
+        if (!r) return;
+
+        document.getElementById('f-name').value = r.name || '';
+        document.getElementById('f-mobile').value = r.mobile || '';
+        document.getElementById('f-batchType').value = r.batchType || '';
+        document.getElementById('f-batchYear').value = r.batchYear || '';
+        document.getElementById('f-participants').value = r.participants || 1;
+        document.getElementById('f-tshirt').value = r.tshirtSize || 'M';
+        document.getElementById('f-payment').value = r.paymentMethod || 'বিকাশ';
+        document.getElementById('f-status').value = r.paymentStatus || 'Unpaid';
+        document.getElementById('f-amount').value = r.amount || 500;
+        document.getElementById('f-address').value = r.address || '';
+        document.getElementById('f-editKey').value = regNo;
+
+        document.getElementById('regSubmitBtn').innerHTML = '<i class="fas fa-save"></i> আপডেট করুন';
+        switchPage('register');
+    }
+
+    // পেমেন্ট টগল
+    async function togglePaid(regNo, current) {
+        const newStatus = current === 'Paid' ? 'Unpaid' : 'Paid';
+        try {
+            await db.ref('registrations/' + regNo + '/paymentStatus').set(newStatus);
+            showToast(newStatus === 'Paid' ? 'পরিশোধিত করা হয়েছে' : 'অপরিশোধিত করা হয়েছে', 'success');
+            loadRegistrations();
+        } catch (e) {
+            showToast('আপডেটে সমস্যা', 'error');
+        }
+    }
+
+    // মুছুন
+    function deleteReg(regNo) {
+        pendingConfirmAction = async () => {
+            try {
+                await db.ref('registrations/' + regNo).remove();
+                showToast('নিবন্ধন মুছে ফেলা হয়েছে', 'success');
+                loadRegistrations();
+            } catch (e) {
+                showToast('মুছতে সমস্যা', 'error');
+            }
+        };
+        document.getElementById('confirmMsg').textContent = `${regNo} নিবন্ধনটি মুছে ফেলতে চান?`;
+        document.getElementById('confirmModal').classList.add('show');
+    }
+    function confirmAction() {
+        if (pendingConfirmAction) pendingConfirmAction();
+        closeConfirm();
+    }
+    function closeConfirm() {
+        document.getElementById('confirmModal').classList.remove('show');
+        pendingConfirmAction = null;
+    }
+
+    // ================================================================
+    //  নোটিশ বোর্ড
+    // ================================================================
+    async function submitNotice(e) {
+        e.preventDefault();
+        const title = document.getElementById('n-title').value.trim();
+        const body = document.getElementById('n-body').value.trim();
+        const priority = document.getElementById('n-priority').value;
+        const author = document.getElementById('n-author').value.trim() || 'অ্যাডমিন';
+
+        if (!title) { showToast('শিরোনাম লিখুন', 'error'); return; }
+
+        try {
+            await db.ref('notices').push({
+                title, body, priority, author,
+                timestamp: Date.now()
+            });
+            showToast('নোটিশ প্রকাশিত হয়েছে!', 'success');
+            document.getElementById('noticeForm').reset();
+            document.getElementById('n-author').value = 'অ্যাডমিন';
+            document.getElementById('n-priority').value = 'general';
+            loadNotices();
+        } catch (e) {
+            showToast('নোটিশ প্রকাশে সমস্যা', 'error');
+        }
+    }
+
+    async function loadNotices() {
+        try {
+            const snap = await db.ref('notices').once('value');
+            const el = document.getElementById('noticeListContainer');
+
+            if (!snap.exists()) {
+                el.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash"></i><p>কোনো নোটিশ নেই</p></div>';
+                return;
+            }
+
+            const data = snap.val();
+            let notices = Object.entries(data).map(([key, val]) => ({ ...val, _key: key }));
+            notices.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            el.innerHTML = notices.map(n => {
+                const priority = n.priority || 'general';
+                const tagLabel = priority === 'urgent' ? 'জরুরি' : priority === 'important' ? 'গুরুত্বপূর্ণ' : 'সাধারণ';
+                return `
+                <div class="notice-row ${priority}">
+                    <div class="notice-row-info">
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+                            <span class="notice-tag ${priority}">${tagLabel}</span>
+                            <span class="notice-row-title">${n.title || '---'}</span>
+                        </div>
+                        ${n.body ? `<div class="notice-row-body">${n.body}</div>` : ''}
+                        <div class="notice-row-meta">
+                            <span><i class="fas fa-clock"></i> ${formatTime(n.timestamp)}</span>
+                            ${n.author ? `<span><i class="fas fa-user"></i> ${n.author}</span>` : ''}
+                        </div>
+                    </div>
+                    <div style="flex-shrink:0;">
+                        <button class="btn btn-sm btn-danger" onclick="deleteNotice('${n._key}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function deleteNotice(key) {
+        pendingConfirmAction = async () => {
+            try {
+                await db.ref('notices/' + key).remove();
+                showToast('নোটিশ মুছে ফেলা হয়েছে', 'success');
+                loadNotices();
+            } catch (e) {
+                showToast('মুছতে সমস্যা', 'error');
+            }
+        };
+        document.getElementById('confirmMsg').textContent = 'এই নোটিশটি মুছে ফেলতে চান?';
+        document.getElementById('confirmYes').innerHTML = '<i class="fas fa-trash"></i> হ্যাঁ, মুছুন';
+        document.getElementById('confirmModal').classList.add('show');
+    }
+
+    function formatTime(ts) {
+        if (!ts) return '---';
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return '---';
+        const months = ['জানু','ফেব্রু','মার্চ','এপ্রি','মে','জুন','জুলা','আগ','সেপ্টে','অক্টো','নভে','ডিসে'];
+        const h = d.getHours(), m = d.getMinutes().toString().padStart(2, '0');
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${h % 12 || 12}:${m} ${ampm}`;
+    }
+
+    // ================================================================
+    //  টোস্ট
+    // ================================================================
+    function showToast(msg, type = 'info') {
+        const wrap = document.getElementById('toastWrap');
+        const t = document.createElement('div');
+        t.className = `toast-msg toast-${type}`;
+        const ico = type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle';
+        t.innerHTML = `<i class="fas fa-${ico}"></i> ${msg}`;
+        wrap.appendChild(t);
+        setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 2500);
+    }
+
+    // ================================================================
+    //  মোডালের বাইরে ক্লিক
+    // ================================================================
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDetail();
+    });
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+        if (e.target === this) closeConfirm();
+    });
+
+    // ================================================================
+    //  ইনিশিয়ালাইজেশন
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDashboard();
+    });
+    </script>
+</body>
+</html>
