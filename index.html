@@ -269,6 +269,16 @@
             font-weight: 800;
             color: var(--primary-soft);
             letter-spacing: 1px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color .2s, text-shadow .2s;
+        }
+        .credit-name:hover {
+            color: var(--accent-dark);
+            text-shadow: 0 0 8px rgba(212,175,55,0.3);
+        }
+        .credit-name:active {
+            opacity: 0.7;
         }
         .credit-sep {
             color: var(--accent);
@@ -316,6 +326,9 @@
             <div class="sidebar-divider"></div>
             <div class="sidebar-item" data-page="notices" onclick="switchPage('notices')">
                 <i class="fas fa-bullhorn"></i> নোটিশ বোর্ড
+            </div>
+            <div class="sidebar-item" data-page="eventinfo" onclick="switchPage('eventinfo')">
+                <i class="fas fa-cog"></i> অনুষ্ঠানের তথ্য
             </div>
             <div class="sidebar-divider"></div>
             <a class="sidebar-item" href="https://gmsmcd.github.io/kcgunitedsecondaryschool/" target="_blank" style="text-decoration:none;">
@@ -436,6 +449,10 @@
                         <label class="form-label">ঠিকানা</label>
                         <input type="text" class="form-input" id="f-address" placeholder="বর্তমান ঠিকানা">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">গ্রহণকারী (Received By)</label>
+                        <input type="text" class="form-input" id="f-receivedBy" placeholder="যিনি পেমেন্ট গ্রহণ করেছেন">
+                    </div>
 
                     <!-- ফটো আপলোড -->
                     <div class="form-group">
@@ -518,6 +535,54 @@
                 <div id="noticeListContainer"><div style="padding:16px 0;"><div class="spinner"></div></div></div>
             </div>
         </div>
+
+        <!-- অনুষ্ঠানের তথ্য -->
+        <div id="page-eventinfo" class="page">
+            <div class="card">
+                <div class="card-title"><i class="fas fa-cog"></i> অনুষ্ঠানের তথ্য পরিচালনা</div>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">এখান থেকে পরিবর্তন করলে ইউজার অ্যাপে সাথে সাথে আপডেট হবে</p>
+                <form id="eventInfoForm" onsubmit="saveEventInfo(event)">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-calendar-alt" style="color:var(--primary-soft); margin-right:4px;"></i> অনুষ্ঠানের তারিখ</label>
+                        <input type="text" class="form-input" id="ei-date" placeholder="যেমন: শীঘ্রই ঘোষণা করা হবে">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-map-marker-alt" style="color:#ec4899; margin-right:4px;"></i> অনুষ্ঠানের স্থান</label>
+                        <input type="text" class="form-input" id="ei-venue" placeholder="যেমন: বিদ্যালয় প্রাঙ্গণ">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-tshirt" style="color:var(--accent-dark); margin-right:4px;"></i> টি-শার্ট তথ্য</label>
+                        <input type="text" class="form-input" id="ei-tshirt" placeholder="যেমন: প্রত্যেক সদস্যকে দেওয়া হবে">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-money-bill-wave" style="color:#059669; margin-right:4px;"></i> নিবন্ধন ফি</label>
+                        <input type="text" class="form-input" id="ei-fee" placeholder="যেমন: ৫০০ টাকা / জন">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fas fa-save"></i> সেভ করুন</button>
+                </form>
+            </div>
+            <div class="card" style="background:linear-gradient(135deg,#f0f7ff,#fefce8); border:1px solid rgba(212,175,55,0.15);">
+                <div class="card-title"><i class="fas fa-eye"></i> প্রিভিউ (ইউজার অ্যাপে যেমন দেখাবে)</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#dbeafe; color:var(--primary-soft); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;"><i class="fas fa-calendar-alt"></i></div>
+                        <div><div style="font-size:10px; color:var(--text-muted);">তারিখ</div><div style="font-size:13px; font-weight:700; color:var(--text-primary);" id="preview-date">---</div></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#fce7f3; color:#ec4899; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;"><i class="fas fa-map-marker-alt"></i></div>
+                        <div><div style="font-size:10px; color:var(--text-muted);">স্থান</div><div style="font-size:13px; font-weight:700; color:var(--text-primary);" id="preview-venue">---</div></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#fef3c7; color:var(--accent-dark); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;"><i class="fas fa-tshirt"></i></div>
+                        <div><div style="font-size:10px; color:var(--text-muted);">টি-শার্ট</div><div style="font-size:13px; font-weight:700; color:var(--text-primary);" id="preview-tshirt">---</div></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;"><i class="fas fa-money-bill-wave"></i></div>
+                        <div><div style="font-size:10px; color:var(--text-muted);">নিবন্ধন ফি</div><div style="font-size:13px; font-weight:900; color:#059669;" id="preview-fee">---</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- টোস্ট -->
@@ -542,7 +607,7 @@
         <div class="modal-box" style="max-width:460px; padding:0; overflow:hidden;">
             <div id="detailContent"></div>
             <div style="padding:12px 20px; display:flex; gap:8px; justify-content:center;">
-                <button onclick="downloadDetailCard()" class="btn btn-accent btn-sm"><i class="fas fa-download"></i> ডাউনলোড</button>
+                <button onclick="downloadDetailCard()" class="btn btn-accent btn-sm" id="adminBtnDl"><i class="fas fa-download"></i> ডাউনলোড</button>
                 <button onclick="closeDetail()" class="btn btn-ghost btn-sm"><i class="fas fa-times"></i> বন্ধ করুন</button>
             </div>
         </div>
@@ -551,7 +616,7 @@
     <!-- অ্যাপ ফুটার - ডেভেলপার ক্রেডিট -->
     <div class="app-footer-credit">
         <div class="credit-divider"><span class="credit-diamond">&#9670;</span></div>
-        <div class="credit-line">Developed By <span class="credit-name">S@ju</span> <span class="credit-sep">|</span> <span class="credit-batch">2020 SSC Batch</span></div>
+        <div class="credit-line">Developed By <a class="credit-name" href="https://mrsaju.space-z.ai" target="_blank" rel="noopener">S@ju</a> <span class="credit-sep">|</span> <span class="credit-batch">2020 SSC Batch</span></div>
     </div>
 
     <script>
@@ -576,7 +641,7 @@
     // ================================================================
     //  পেজ নেভিগেশন
     // ================================================================
-    const pageTitles = { dashboard: 'ড্যাশবোর্ড', register: 'নতুন নিবন্ধন', registrations: 'সকল নিবন্ধন', notices: 'নোটিশ বোর্ড' };
+    const pageTitles = { dashboard: 'ড্যাশবোর্ড', register: 'নতুন নিবন্ধন', registrations: 'সকল নিবন্ধন', notices: 'নোটিশ বোর্ড', eventinfo: 'অনুষ্ঠানের তথ্য' };
     function switchPage(page) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page-' + page)?.classList.add('active');
@@ -586,6 +651,7 @@
         if (page === 'dashboard') loadDashboard();
         if (page === 'registrations') loadRegistrations();
         if (page === 'notices') loadNotices();
+        if (page === 'eventinfo') loadEventInfo();
     }
 
     // ================================================================
@@ -596,6 +662,52 @@
         if (!snap.exists()) return [];
         const data = snap.val();
         return Object.entries(data).map(([key, val]) => ({ ...val, _key: key }));
+    }
+
+    // ================================================================
+    //  অনুষ্ঠানের তথ্য (Firebase /eventInfo)
+    // ================================================================
+    const defaultEventInfo = { date: 'শীঘ্রই ঘোষণা করা হবে', venue: 'বিদ্যালয় প্রাঙ্গণ', tshirt: 'প্রত্যেক সদস্যকে দেওয়া হবে', fee: '৫০০ টাকা / জন' };
+
+    async function loadEventInfo() {
+        const snap = await db.ref('eventInfo').once('value');
+        const info = snap.exists() ? { ...defaultEventInfo, ...snap.val() } : { ...defaultEventInfo };
+        document.getElementById('ei-date').value = info.date || '';
+        document.getElementById('ei-venue').value = info.venue || '';
+        document.getElementById('ei-tshirt').value = info.tshirt || '';
+        document.getElementById('ei-fee').value = info.fee || '';
+        document.getElementById('preview-date').textContent = info.date || '---';
+        document.getElementById('preview-venue').textContent = info.venue || '---';
+        document.getElementById('preview-tshirt').textContent = info.tshirt || '---';
+        document.getElementById('preview-fee').textContent = info.fee || '---';
+    }
+
+    async function saveEventInfo(e) {
+        e.preventDefault();
+        const info = {
+            date: document.getElementById('ei-date').value.trim(),
+            venue: document.getElementById('ei-venue').value.trim(),
+            tshirt: document.getElementById('ei-tshirt').value.trim(),
+            fee: document.getElementById('ei-fee').value.trim()
+        };
+        try {
+            await db.ref('eventInfo').set(info);
+            // সেভ ভেরিফিকেশন - আবার পড়ে চেক করি
+            const verifySnap = await db.ref('eventInfo').once('value');
+            if (verifySnap.exists()) {
+                const saved = verifySnap.val();
+                document.getElementById('preview-date').textContent = saved.date || '---';
+                document.getElementById('preview-venue').textContent = saved.venue || '---';
+                document.getElementById('preview-tshirt').textContent = saved.tshirt || '---';
+                document.getElementById('preview-fee').textContent = saved.fee || '---';
+                showToast('সেভ সফল! ইউজার অ্যাপে সর্বোচ্চ ১০ সেকেন্ডে আপডেট হবে', 'success');
+            } else {
+                showToast('সেভ হয়েছে কিন্তু ভেরিফিকেশনে সমস্যা', 'error');
+            }
+        } catch (err) {
+            console.error('EventInfo save error:', err);
+            showToast('সেভ করতে সমস্যা হয়েছে: ' + err.message, 'error');
+        }
     }
 
     // ================================================================
@@ -711,6 +823,7 @@
         const paymentStatus = document.getElementById('f-status').value;
         const amount = parseInt(document.getElementById('f-amount').value) || 0;
         const address = document.getElementById('f-address').value.trim();
+        const receivedBy = document.getElementById('f-receivedBy').value.trim();
         const photo = document.getElementById('f-photo').value;
         const editKey = document.getElementById('f-editKey').value;
 
@@ -718,13 +831,13 @@
 
         try {
             if (editKey) {
-                await db.ref('registrations/' + editKey).update({ name, mobile, batchType, batchYear, participants, tshirtSize, paymentMethod, paymentStatus, amount, address, photo });
+                await db.ref('registrations/' + editKey).update({ name, mobile, batchType, batchYear, participants, tshirtSize, paymentMethod, paymentStatus, amount, address, receivedBy, photo });
                 showToast('নিবন্ধন আপডেট হয়েছে!', 'success');
             } else {
                 const counterSnap = await db.ref('counters/registration').once('value');
                 let nextNum = (counterSnap.val() || 0) + 1;
                 const regNo = 'RJ2027-' + String(nextNum).padStart(4, '0');
-                await db.ref('registrations/' + regNo).set({ regNo, name, mobile, batchType, batchYear, participants, tshirtSize, paymentMethod, paymentStatus, amount, address, photo, timestamp: Date.now() });
+                await db.ref('registrations/' + regNo).set({ regNo, name, mobile, batchType, batchYear, participants, tshirtSize, paymentMethod, paymentStatus, amount, address, receivedBy, photo, timestamp: Date.now() });
                 await db.ref('counters/registration').set(nextNum);
                 showToast('নিবন্ধন সফল! ' + regNo, 'success');
             }
@@ -806,7 +919,7 @@
             ['Payment Method', reg.paymentMethod || '---'],
             ['Amount (TK)', '৳' + (reg.amount || 0)],
             ['In Words', amountInWords(reg.amount)],
-            ['Received By', (reg.batchYear || '---') + ' - ' + (reg.name || '---')],
+            ['Received By', reg.receivedBy || '---'],
         ];
 
         const rows = fields.map(f => `<tr><td>${f[0]}</td><td>${f[1]}</td></tr>`).join('');
@@ -848,15 +961,49 @@
 
     function downloadDetailCard() {
         const card = document.getElementById('detailCardCapture');
-        if (typeof html2canvas === 'function') {
-            html2canvas(card, { backgroundColor: null, scale: 2 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'RJ2027-detail-card.png';
-                link.href = canvas.toDataURL();
-                link.click();
-                showToast('কার্ড ডাউনলোড হচ্ছে', 'success');
-            }).catch(() => showToast('ডাউনলোডে সমস্যা', 'error'));
-        }
+        if (!card) { showToast('কার্ড পাওয়া যায়নি', 'error'); return; }
+
+        const btnDl = document.getElementById('adminBtnDl');
+        if (btnDl) { btnDl.disabled = true; btnDl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> হচ্ছে...'; }
+
+        showToast('কার্ড তৈরি হচ্ছে...', 'info');
+
+        setTimeout(() => {
+            if (typeof html2canvas === 'function') {
+                html2canvas(card, {
+                    backgroundColor: '#ffffff',
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                    width: card.offsetWidth,
+                    height: card.offsetHeight
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    const regNo = card.querySelector('.reg-no')?.textContent || 'RJ2027';
+                    const nameField = card.querySelectorAll('.detail-table td');
+                    let name = '';
+                    for (let i = 0; i < nameField.length; i += 2) {
+                        if (nameField[i]?.textContent?.trim() === 'Name') {
+                            name = nameField[i+1]?.textContent?.trim() || '';
+                            break;
+                        }
+                    }
+                    link.download = regNo + (name ? '-' + name.replace(/\s+/g, '_') : '') + '.png';
+                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.click();
+                    showToast('কার্ড ডাউনলোড হয়েছে!', 'success');
+                }).catch(err => {
+                    console.error(err);
+                    showToast('ডাউনলোডে সমস্যা হয়েছে', 'error');
+                }).finally(() => {
+                    if (btnDl) { btnDl.disabled = false; btnDl.innerHTML = '<i class="fas fa-download"></i> ডাউনলোড'; }
+                });
+            } else {
+                showToast('ডাউনলোড সুবিধা লোড হয়নি', 'error');
+                if (btnDl) { btnDl.disabled = false; btnDl.innerHTML = '<i class="fas fa-download"></i> ডাউনলোড'; }
+            }
+        }, 300);
     }
 
     // ================================================================
@@ -878,6 +1025,7 @@
             document.getElementById('f-status').value = r.paymentStatus || 'Unpaid';
             document.getElementById('f-amount').value = r.amount || 500;
             document.getElementById('f-address').value = r.address || '';
+            document.getElementById('f-receivedBy').value = r.receivedBy || '';
             document.getElementById('f-editKey').value = regNo;
             document.getElementById('regSubmitBtn').innerHTML = '<i class="fas fa-save"></i> আপডেট করুন';
 
